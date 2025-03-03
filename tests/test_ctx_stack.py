@@ -1,7 +1,7 @@
 import logging
 import pytest
 
-from pyeda.contrib import ctx_stack
+import ctx_stack
 
 @pytest.fixture(autouse=True)
 def reset_context_stack():

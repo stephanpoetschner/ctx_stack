@@ -79,10 +79,9 @@ import logfmter
 from ctx_stack import update, dumps
 
 # Configure logging with logfmter
-logging.basicConfig(
-    level=logging.INFO,
-    format=logfmter.Logfmter()
-)
+handler = logging.StreamHandler()
+handler.setFormatter(logfmter.Logfmter())
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 logger = logging.getLogger("app")
 
 # Add context
@@ -143,3 +142,8 @@ MIT
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+[![Python Package](https://github.com/yourusername/ctx_stack/actions/workflows/python-package.yml/badge.svg)](https://github.com/yourusername/ctx_stack/actions/workflows/python-package.yml)
+[![PyPI version](https://badge.fury.io/py/ctx-stack.svg)](https://badge.fury.io/py/ctx-stack)
+[![Python Versions](https://img.shields.io/pypi/pyversions/ctx-stack.svg)](https://pypi.org/project/ctx-stack/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

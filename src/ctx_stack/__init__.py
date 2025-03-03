@@ -3,6 +3,8 @@ import logging
 from collections import deque
 from contextlib import contextmanager
 
+__all__ = ['ContextStack', 'update', 'dumps']
+
 
 class ContextStack:
     """
@@ -14,7 +16,7 @@ class ContextStack:
     >>> logging.basicConfig(level=logging.INFO, format=logfmter.Logfmter())
     >>> logger = logging.getLogger("sample_logger")
     # Create a new logging context
-    >>> from pyeda.contrib import ctx_stack as logging_ctx
+    >>> import ctx_stack as logging_ctx
     >>> with logging_ctx.update(**{"message_id": "123"}):
     ...     logger.info("Hello world.", extra=logging_ctx.dumps(**{"user": "John Doe"}))
     at=INFO msg="Hello world." message_id=123 user="John Doe"
