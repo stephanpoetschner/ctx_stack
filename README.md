@@ -11,6 +11,7 @@ A lightweight, structured logging context manager for Python applications. This 
 - Seamlessly integrate with structured logging formatters like `logfmter`
 - Temporarily add or override context within specific code blocks
 - Deeply nested context management with proper cleanup
+- Save and restore context states across different execution environments
 
 ## Installation
 
@@ -65,6 +66,33 @@ Returns the current context as a dictionary, optionally merged with additional v
 logger.info("Processing item", extra=dumps(item_id="item456"))
 ```
 
+### `reset()`
+
+Resets the context stack to its initial state with only the base context.
+
+```python
+# Clear all context and revert to base state
+reset()
+```
+
+### `save_context()`
+
+Creates a deep copy of the current context stack and returns it for later restoration.
+
+```python
+# Save the current state
+saved_state = save_context()
+```
+
+### `restore_context(saved_context)`
+
+Restores a previously saved context stack.
+
+```python
+# Restore a previously saved state
+restore_context(saved_state)
+```
+
 ### `ContextStack`
 
 The underlying class that manages the context stack. Most users won't need to interact with this directly.
@@ -116,6 +144,42 @@ class RequestContextMiddleware:
             return response
 ```
 
+### With Celery Tasks
+
+The library provides tools to isolate and manage context across Celery tasks:
+
+```python
+from celery import signals
+import ctx_stack as logging_ctx
+
+# Context storage for Celery tasks
+_saved_contexts = {}
+
+@signals.task_prerun.connect
+def adds_logging_context(task_id, task, *args, **kwargs):
+    """Add celery_information to logging context"""
+    # Save the current context
+    _saved_contexts[task_id] = logging_ctx.save_context()
+    
+    # Reset the context stack for this task
+    logging_ctx.reset()
+
+    # Add task-specific context
+    ctx = {
+        "celery_task_id": task_id,
+        "celery_task_name": task.__name__,
+    }
+    
+    with logging_ctx.update(**ctx):
+        logger.info("Starting celery task.")
+
+@signals.task_postrun.connect
+def cleanup_logging_context(task_id, *args, **kwargs):
+    """Restore the previous context when the task completes"""
+    if task_id in _saved_contexts:
+        logging_ctx.restore_context(_saved_contexts.pop(task_id))
+```
+
 ## Features
 
 - **Safe Context Management**: Always preserves the base context
@@ -123,6 +187,7 @@ class RequestContextMiddleware:
 - **Reserved Key Protection**: Automatically prefixes keys that would collide with standard logging fields
 - **Exception Safe**: Properly cleans up context even when exceptions occur
 - **No Dependencies**: Pure Python implementation with no external dependencies
+- **Context State Management**: Save and restore context across execution boundaries
 
 ## Implementation Details
 
@@ -130,6 +195,7 @@ class RequestContextMiddleware:
 - The stack always contains at least one element (the base context)
 - The `update()` context manager ensures proper cleanup with `try/finally`
 - Reserved logging keys are automatically prefixed with `ctx_` to prevent collisions
+- Context state can be saved and restored for cross-boundary operations (like Celery tasks)
 
 ## Thread Safety
 

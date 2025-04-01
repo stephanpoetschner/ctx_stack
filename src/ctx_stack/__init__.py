@@ -3,7 +3,7 @@ import logging
 from collections import deque
 from contextlib import contextmanager
 
-__all__ = ['ContextStack', 'update', 'dumps']
+__all__ = ['ContextStack', 'update', 'dumps', 'reset', 'save_context', 'restore_context']
 
 
 class ContextStack:
@@ -43,6 +43,25 @@ class ContextStack:
     def dumps(self, **kwargs):
         return {} | self._attributes[-1] | kwargs
 
+    def reset(self):
+        """Reset the context stack to its initial state with just the base context."""
+        self._attributes.clear()
+        self._attributes.append({})
+
+    def save(self):
+        """Save the current context stack for later restoration."""
+        return copy.deepcopy(list(self._attributes))
+
+    def restore(self, saved_context):
+        """Restore a previously saved context stack."""
+        if not saved_context:
+            self.reset()
+            return
+        self._attributes = deque(copy.deepcopy(saved_context))
+        # Ensure there's at least the base context
+        if not self._attributes:
+            self._attributes.append({})
+
 
 _context_stack = ContextStack()
 
@@ -50,10 +69,10 @@ _context_stack = ContextStack()
 def _replace_reserved_extra_kwargs(kwargs):
     # Replace reserved keys from logging.message extra keys
     for key in (
-        "args", "asctime", "created", "exc_info", "exc_text", "filename",
-        "funcName", "levelname", "levelno", "lineno", "message", "module",
-        "msecs", "msg", "name", "pathname", "process", "processName",
-        "relativeCreated", "stack_info", "thread", "threadName",
+            "args", "asctime", "created", "exc_info", "exc_text", "filename",
+            "funcName", "levelname", "levelno", "lineno", "message", "module",
+            "msecs", "msg", "name", "pathname", "process", "processName",
+            "relativeCreated", "stack_info", "thread", "threadName",
     ):
         if key in kwargs:
             kwargs[f"ctx_{key}"] = kwargs.pop(key)
@@ -89,3 +108,18 @@ def dumps(**kwargs):
     """
     kwargs = _replace_reserved_extra_kwargs(kwargs)
     return _context_stack.dumps(**kwargs)
+
+
+def reset():
+    """Reset the context stack to its initial state."""
+    _context_stack.reset()
+
+
+def save_context():
+    """Save the current context stack for later restoration."""
+    return _context_stack.save()
+
+
+def restore_context(saved_context):
+    """Restore a previously saved context stack."""
+    _context_stack.restore(saved_context)

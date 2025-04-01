@@ -25,6 +25,13 @@
        • dumps(**kwargs):  
          – Merges the current top context with any additional key-value pairs provided.  
          – Returns the merged dictionary.
+       • reset():
+         – Resets the context stack to its initial state with just the base context.
+       • save():
+         – Creates a deep copy of the current context stack state and returns it.
+       • restore(saved_context):
+         – Replaces the current context stack with a previously saved state.
+         – Ensures there's at least a base context in the stack.
      – __str__(): Provides a string representation of the internal stack for debugging.
 
   2. Context Manager Function – update(**kwargs):  
@@ -36,6 +43,15 @@
   3. Function dumps(**kwargs):  
      – Acts as a convenience wrapper that returns the merged context of the current stack and any additional keys passed in.  
      – Uses the same reserved key remapping as update().
+
+  4. Function reset():
+     – Resets the global context stack to its initial state.
+
+  5. Function save_context():
+     – Creates and returns a saved copy of the current global context stack.
+
+  6. Function restore_context(saved_context):
+     – Restores the global context stack to a previously saved state.
 
 • Data Handling Details:  
   – Context dictionaries are merged using the union operator, ensuring that the new values take priority over older ones.  
@@ -94,14 +110,24 @@ Develop a suite of pytest unit tests that cover:
 5. Exception Safety in update():  
    – Within an update() block, raise an exception intentionally and verify that the context is cleaned up (i.e., it falls back to the base context after exception handling).
 
+6. Context Reset and Save/Restore:
+   – Verify that reset() correctly resets the context to only contain the base context.
+   – Verify that save() correctly captures the current state of the context stack.
+   – Verify that restore() correctly restores a previously saved context stack.
+   – Test a scenario where context is saved, modified, and restored to simulate a Celery task flow.
+
 Example tests may include use of pytest’s caplog fixture to capture warnings and a fixture to reset the global context stack between tests.
 
 ──────────────────────────── 6. Code Sample Summary ─────────────────────────────
-• ContextStack Class & Methods (push, pop, dumps)  
+• ContextStack Class & Methods (push, pop, dumps, reset, save, restore)  
 • update() Context Manager with try/finally handling  
 • _replace_reserved_extra_kwargs() helper to remap reserved keys  
 • A global _context_stack instantiated from ContextStack  
-• Convenience function dumps(**kwargs) for merging context and extra keys  
+• Convenience functions:
+  - dumps(**kwargs) for merging context and extra keys  
+  - reset() for resetting the global context stack
+  - save_context() for saving the current context stack state
+  - restore_context(saved_context) for restoring a previously saved context
 
 A sample modification in pop() (for the safeguard) is as follows:
 
